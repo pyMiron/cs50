@@ -1,0 +1,3 @@
+import ans
+ans.answers()
+
