@@ -11,6 +11,7 @@ def main():
     if len(sys.argv) != 2:
         sys.exit("Usage: python pagerank.py corpus")
     corpus = crawl(sys.argv[1])
+    print(corpus)
     ranks = sample_pagerank(corpus, DAMPING, SAMPLES)
     print(f"PageRank Results from Sampling (n = {SAMPLES})")
     for page in sorted(ranks):
@@ -57,7 +58,30 @@ def transition_model(corpus, page, damping_factor):
     linked to by `page`. With probability `1 - damping_factor`, choose
     a link at random chosen from all pages in the corpus.
     """
-    raise NotImplementedError
+    N = 0
+    res_dict = {}
+    lst = []
+    rand_set = corpus.keys()
+    rand_set = list(rand_set)
+    start_dir = corpus.get(page)
+    start_page = start_dir[random.randrange(len(start_dir))]
+    lst.append(start_page)
+    while N < SAMPLES:
+        new_dir = corpus[start_page]
+        proba = random.randint(1, 100)
+        if start_page == None:
+            start_page = rand_set[random.randrange(len(rand_set))]
+        if proba / 100 <= damping_factor:
+            start_page = new_dir[random.randrange(len(new_dir))]
+        elif proba / 100 > damping_factor:
+            start_page = rand_set[random.randrange(len(rand_set))]
+        lst.append(start_page)
+        N += 1
+    for i in rand_set:
+        fin_prob = lst.count(i)/len(lst)
+        res_dict[i] = fin_prob
+
+    return res_dict
 
 
 def sample_pagerank(corpus, damping_factor, n):
@@ -69,7 +93,32 @@ def sample_pagerank(corpus, damping_factor, n):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    res_dict = {}
+    lst = []
+    N = 0
+    rand_set = corpus.keys()
+    rand_set = list(rand_set)
+
+    start_page = rand_set[random.randrange(len(rand_set))]
+    lst.append(start_page)
+    while n > N:
+        new_dir = corpus.get(start_page)
+        new_dir = list(new_dir)
+        proba = random.randint(1, 100)
+        if proba / 100 <= damping_factor and len(new_dir) > 0:
+            start_page = new_dir[random.randrange(len(new_dir))]
+        elif proba / 100 > damping_factor or len(new_dir) == 0:
+            start_page = rand_set[random.randrange(len(rand_set))]
+        lst.append(start_page)
+        N += 1
+    for i in rand_set:
+        fin_prob = lst.count(i) / len(lst)
+        res_dict[i] = fin_prob
+    print(res_dict)
+    return res_dict
+
+
+
 
 
 def iterate_pagerank(corpus, damping_factor):
@@ -81,8 +130,37 @@ def iterate_pagerank(corpus, damping_factor):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    res_dict = {}
+    rand_set = corpus.keys()
+    rand_set = list(rand_set)
+    start_prob = 1 / len(rand_set)
+    for el in rand_set:
+        res_dict[el] = start_prob
 
 
+    def pages(page):
+        lst = []
+        for i in rand_set:
+            if page in corpus[i] or len(corpus[i]) == 0:
+                lst.append(i)
+        return lst
+
+
+    max_diff = 1
+    while max_diff > 0.001:
+        cur_diff = 0
+        for el in rand_set:
+            res = 0
+            for i in pages(el):
+                numlinks = len(corpus[i])
+                if numlinks == 0:
+                    numlinks = len(rand_set)
+                res += (res_dict[i] / numlinks)*damping_factor
+            res += (1 - damping_factor) / len(rand_set)
+            if res_dict[el]-res > cur_diff:
+                cur_diff = res_dict[el]-res
+            res_dict[el] = res
+        max_diff = min(cur_diff, max_diff)
+    return res_dict
 if __name__ == "__main__":
     main()
