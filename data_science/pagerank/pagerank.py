@@ -58,32 +58,20 @@ def transition_model(corpus, page, damping_factor):
     linked to by `page`. With probability `1 - damping_factor`, choose
     a link at random chosen from all pages in the corpus.
     """
-    N = 0
     res_dict = {}
-    lst = []
-    rand_set = corpus.keys()
-    rand_set = list(rand_set)
-    start_dir = corpus.get(page)
-    start_page = start_dir[random.randrange(len(start_dir))]
-    lst.append(start_page)
-    while N < SAMPLES:
-        new_dir = corpus[start_page]
-        proba = random.randint(1, 100)
-        if start_page == None:
-            start_page = rand_set[random.randrange(len(rand_set))]
-        if proba / 100 <= damping_factor:
-            start_page = new_dir[random.randrange(len(new_dir))]
-        elif proba / 100 > damping_factor:
-            start_page = rand_set[random.randrange(len(rand_set))]
-        lst.append(start_page)
-        N += 1
+    rand_set = list(corpus.keys())
     for i in rand_set:
-        fin_prob = lst.count(i)/len(lst)
-        res_dict[i] = fin_prob
-
+        res_dict[i] = 0
+    if len(corpus[page]) == 0:
+        for i in rand_set:
+            res_dict[i] = 1/len(rand_set)
+    else:
+        prob = damping_factor / len(corpus[page])
+        for i in rand_set:
+            res_dict[i] += (1 - damping_factor)/len(rand_set)
+            if i in corpus[page]:
+                res_dict[i] += prob
     return res_dict
-
-
 def sample_pagerank(corpus, damping_factor, n):
     """
     Return PageRank values for each page by sampling `n` pages
@@ -93,24 +81,21 @@ def sample_pagerank(corpus, damping_factor, n):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    res_dict = {}
+
     lst = []
-    N = 0
-    rand_set = corpus.keys()
-    rand_set = list(rand_set)
+    rand_set = list(corpus.keys())
 
     start_page = rand_set[random.randrange(len(rand_set))]
     lst.append(start_page)
-    while n > N:
-        new_dir = corpus.get(start_page)
-        new_dir = list(new_dir)
+    res_dict = transition_model(corpus, start_page, damping_factor)
+    for _ in range(n):
+        links_from_page = list(corpus.get(start_page))
         proba = random.randint(1, 100)
-        if proba / 100 <= damping_factor and len(new_dir) > 0:
-            start_page = new_dir[random.randrange(len(new_dir))]
-        elif proba / 100 > damping_factor or len(new_dir) == 0:
+        if proba / 100 <= damping_factor and len(links_from_page) > 0:
+            start_page = links_from_page[random.randrange(len(links_from_page))]
+        elif proba / 100 > damping_factor or len(links_from_page) == 0:
             start_page = rand_set[random.randrange(len(rand_set))]
         lst.append(start_page)
-        N += 1
     for i in rand_set:
         fin_prob = lst.count(i) / len(lst)
         res_dict[i] = fin_prob
@@ -137,28 +122,25 @@ def iterate_pagerank(corpus, damping_factor):
     for el in rand_set:
         res_dict[el] = start_prob
 
-
-    def pages(page):
+    def linked_pages(page):
         lst = []
         for i in rand_set:
             if page in corpus[i] or len(corpus[i]) == 0:
                 lst.append(i)
         return lst
 
-
     max_diff = 1
     while max_diff > 0.001:
         cur_diff = 0
         for el in rand_set:
             res = 0
-            for i in pages(el):
+            for i in linked_pages(el):
                 numlinks = len(corpus[i])
                 if numlinks == 0:
                     numlinks = len(rand_set)
                 res += (res_dict[i] / numlinks)*damping_factor
             res += (1 - damping_factor) / len(rand_set)
-            if res_dict[el]-res > cur_diff:
-                cur_diff = res_dict[el]-res
+            cur_diff = max(cur_diff, res_dict[el]-res)
             res_dict[el] = res
         max_diff = min(cur_diff, max_diff)
     return res_dict
