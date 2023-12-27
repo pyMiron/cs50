@@ -12,7 +12,7 @@ people = {}
 # Maps movie_ids to a dictionary of: title, year, stars (a set of person_ids)
 movies = {}
 
-#directory = 'C:\Users\user\PycharmProjects\pythonProject\data science\degrees\small'
+#directory = 'C:\Users\user\PycharmProjects\pythonProject\data_science\degrees\small'
 def load_data(directory):
     """
     Load data from CSV files into memory.
